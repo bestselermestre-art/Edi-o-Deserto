@@ -1,0 +1,65 @@
+import numpy as np
+
+class ATM_Deserto:
+    def __init__(self):
+        # Assinaturas calibradas para o ambiente árido
+        self.assinaturas = {
+            "Agua Subterranea": 0.45,
+            "Litio (Baterias)": 0.82,
+            "Silicio (Solar)": 0.65,
+            "Salitre": 0.30,
+            "Rocha Seca": 0.15
+        }
+
+    def modo_deserto(self, sinal_bruto):
+        """Aplica ganho de penetração para solo arenoso."""
+        fator_penetracao = 3.5
+        ruido_areia = 0.20
+        # Limpa o sinal da areia superficial
+        sinal_filtrado = np.where(sinal_bruto > ruido_areia, sinal_bruto, 0)
+        return sinal_filtrado * fator_penetracao
+
+    def identificar_material(self, valor_sinal):
+        # Encontra o recurso mais próximo na biblioteca
+        material = min(self.assinaturas, key=lambda x: abs(self.assinaturas[x] - valor_sinal))
+        return material
+
+    def prioridade_humanitaria(self, lista_recursos):
+        """Define o foco: Agua é sempre a prioridade 1."""
+        alvo = None
+        nivel = 0
+        
+        for r in lista_recursos:
+            if r == "Agua Subterranea":
+                alvo = r
+                nivel = 3 # Prioridade Máxima
+                break # Se achou água, para tudo.
+            elif r in ["Litio (Baterias)", "Silicio (Solar)"]:
+                if nivel < 2:
+                    alvo = r
+                    nivel = 2
+        
+        if alvo:
+            return f"ALVO DEFINIDO: {alvo} (Nivel de Urgencia: {nivel})"
+        return "Varredura completa: Nanhum recurso critico encontrado."
+
+# --- EXECUÇÃO DO ESCÂNER (DRONE SIMULADO) ---
+atm = ATM_Deserto()
+
+# Simulando sinais vindos de diferentes profundidades do deserto
+# 0.12 (areia), 0.43 (umidade), 0.80 (minério)
+leitura_sensor = np.array([0.12, 0.43, 0.80])
+
+# Processando
+sinais_claros = atm.modo_deserto(leitura_sensor)
+recursos_detectados = []
+
+for s in sinais_claros:
+    if s > 0:
+        # Normalizamos o sinal para comparar com a biblioteca (0 a 1)
+        res = atm.identificar_material(s / 3.5) 
+        recursos_detectados.append(res)
+
+print("--- RELATÓRIO ATM DESERTO ---")
+print(f"Recursos na area: {recursos_detectados}")
+print(atm.prioridade_humanitaria(recursos_detectados))
